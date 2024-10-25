@@ -351,7 +351,6 @@ export namespace BigNumber {
   };
 
   export const ZERO = BigNumber.from(0);
-  export const ONE = BigNumber.from(1e8);
 }
 
 interface Curry2<X, Y, Ret> {

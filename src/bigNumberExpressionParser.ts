@@ -137,20 +137,6 @@ const term = numberWithDec.apply(
           () => (x: BigNumberSource) => (y: BigNumberSource) =>
             BigNumber.pow(x, BigNumber.toNumber(y)) as BigNumberSource,
         ),
-        expression('*~').map(
-          () => (x: BigNumberSource) => (y: BigNumberSource) =>
-            BigNumber.div(
-              BigNumber.mul(x, y),
-              BigNumber.ONE,
-            ) as BigNumberSource,
-        ),
-        expression('/~').map(
-          () => (x: BigNumberSource) => (y: BigNumberSource) =>
-            BigNumber.mul(
-              BigNumber.div(x, y),
-              BigNumber.ONE,
-            ) as BigNumberSource,
-        ),
         expression('*' as string)
           .or(expression('x'))
           .map(() => BigNumber.mul),

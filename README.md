@@ -13,16 +13,6 @@ math`(${a} + ${b} * ${c}) / ${d} + ${e}`
 
 I like the second one. ^^
 
-```typescript
-import { math, BigNumber } from 'math-literal';
-
-const a = BigNumber.from('1'); // support bigint, number, string, BigNumber
-...
-
-math`(${a} + ${b} * ${c}) / ${d} + ${e}`
-
-```
-
 there is also `mathIs` that returns a boolean
 
 ```typescript
@@ -41,8 +31,6 @@ mathIs`abs(${a}) > ${b}`
 #### Special Arithmetic Operators
 - `<<` : Left move decimals (equivalent to multiplying by a power of 10)
 - `>>` : Right move decimals (equivalent to dividing by a power of 10)
-- `*~` : Multiplication with rounding down
-- `/~` : Division with rounding down
 
 #### Unary Operators
 - `-` : Negation (when used before a number or expression)
