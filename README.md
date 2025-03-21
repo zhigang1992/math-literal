@@ -2,18 +2,8 @@ Math Literal
 -----
 
 ```javascript
-BigNumber.add(BigNumber.div(BigNumber.plus(a, BigNumber.times(b, c)), d), e)
-```
-
-Or
-
-```javascript
 math`(${a} + ${b} * ${c}) / ${d} + ${e}`
 ```
-
-I like the second one. ^^
-
-there is also `mathIs` that returns a boolean
 
 ```typescript
 mathIs`abs(${a}) > ${b}`
