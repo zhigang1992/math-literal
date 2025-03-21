@@ -1,6 +1,12 @@
 Math Literal
 -----
 
+```bash
+npm i math-literal
+```
+then
+
+
 ```javascript
 math`(${a} + ${b} * ${c}) / ${d} + ${e}`
 ```
