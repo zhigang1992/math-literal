@@ -1,6 +1,15 @@
 Math Literal
 -----
 
+Then problem:
+
+
+```javascript
+BigNumber.add(BigNumber.div(BigNumber.plus(a, BigNumber.times(b, c)), d), e)
+```
+
+This is hard to read, and hard maintain.
+
 ```bash
 npm i math-literal
 ```
