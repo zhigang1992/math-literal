@@ -11,7 +11,7 @@ export type ExpressionSource =
     };
 
 const expression = <Op extends string>(
-  input: Op,
+  input: Op
 ): Parser<ExpressionSource, Op> =>
   new Parser<ExpressionSource, Op>((i) => {
     const expressions = i.slice(0, input.length).map((a) => {
@@ -33,20 +33,20 @@ function fails<T>(): Parser<ExpressionSource, T> {
 }
 
 function oneOf<T>(
-  p: Parser<ExpressionSource, T>[],
+  p: Parser<ExpressionSource, T>[]
 ): Parser<ExpressionSource, T> {
   return p.reduce((a, b) => a.or(b), fails());
 }
 
 // \d+
 function some<T>(
-  p: Parser<ExpressionSource, T>,
+  p: Parser<ExpressionSource, T>
 ): Parser<ExpressionSource, T[]> {
   return p.flatMap((x) => someOrNone(p).map((xs) => [x, ...xs]));
 }
 // \d*
 function someOrNone<T>(
-  p: Parser<ExpressionSource, T>,
+  p: Parser<ExpressionSource, T>
 ): Parser<ExpressionSource, T[]> {
   return some(p).or(Parser.unit([]));
 }
@@ -76,15 +76,15 @@ const paras = expression('(')
 const factor = number.or(paras);
 
 const neg = expression('-').apply(factor, (_, b) => b.map(BigNumber.neg));
-const round = expression("round").apply(factor, (_, b) =>
-  b.map(BigNumber.round({})),
-)
-const floor = expression("floor").apply(factor, (_, b) =>
-  b.map(BigNumber.round({ roundingMode: BigNumber.roundDown })),
-)
-const ceil = expression("ceil").apply(factor, (_, b) =>
-  b.map(BigNumber.round({ roundingMode: BigNumber.roundUp })),
-)
+const round = expression('round').apply(factor, (_, b) =>
+  b.map(BigNumber.round({}))
+);
+const floor = expression('floor').apply(factor, (_, b) =>
+  b.map(BigNumber.round({ roundingMode: BigNumber.roundDown }))
+);
+const ceil = expression('ceil').apply(factor, (_, b) =>
+  b.map(BigNumber.round({ roundingMode: BigNumber.roundUp }))
+);
 const sqrt = expression('sqrt').apply(paras, (_, b) => b.map(BigNumber.sqrt));
 const abs = expression('abs').apply(paras, (_, b) => b.map(BigNumber.abs));
 const ln = expression('ln').apply(paras, (_, b) => b.map(BigNumber.ln));
@@ -92,10 +92,10 @@ const exp = expression('exp').apply(paras, (_, b) => b.map(BigNumber.exp));
 
 const minAndMax = oneOf([
   expression('max').map(
-    () => (a: BigNumberSource) => (b: BigNumberSource) => BigNumber.max([a, b]),
+    () => (a: BigNumberSource) => (b: BigNumberSource) => BigNumber.max([a, b])
   ),
   expression('min').map(
-    () => (a: BigNumberSource) => (b: BigNumberSource) => BigNumber.min([a, b]),
+    () => (a: BigNumberSource) => (b: BigNumberSource) => BigNumber.min([a, b])
   ),
 ])
   .apply(expression('('), (a, _) => a)
@@ -123,33 +123,33 @@ const term = numberWithDec.apply(
           () => (x: BigNumberSource) => (y: BigNumberSource) =>
             BigNumber.leftMoveDecimals(
               BigNumber.toNumber(y),
-              x,
-            ) as BigNumberSource,
+              x
+            ) as BigNumberSource
         ),
         expression('>>').map(
           () => (x: BigNumberSource) => (y: BigNumberSource) =>
             BigNumber.rightMoveDecimals(
               BigNumber.toNumber(y),
-              x,
-            ) as BigNumberSource,
+              x
+            ) as BigNumberSource
         ),
         oneOf([expression('**'), expression('^')]).map(
           () => (x: BigNumberSource) => (y: BigNumberSource) =>
-            BigNumber.pow(x, BigNumber.toNumber(y)) as BigNumberSource,
+            BigNumber.pow(x, BigNumber.toNumber(y)) as BigNumberSource
         ),
         expression('*' as string)
           .or(expression('x'))
           .map(() => BigNumber.mul),
         expression('/').map(() => BigNumber.div),
-      ].map((o) => o.apply(numberWithDec, (op, right) => [op, right] as const)),
-    ),
+      ].map((o) => o.apply(numberWithDec, (op, right) => [op, right] as const))
+    )
   ),
   (left, list) =>
     list.reduce(
       (curr, [op, right]): Execution =>
         curr.apply(right, (x, y) => BigNumber.from(op(x)(y))),
-      left,
-    ) as Execution,
+      left
+    ) as Execution
 );
 
 const expr: Parser<ExpressionSource, Execution> = term.apply(
@@ -158,19 +158,19 @@ const expr: Parser<ExpressionSource, Execution> = term.apply(
       [
         expression('+').map(() => BigNumber.add),
         expression('-').map(() => BigNumber.minus),
-      ].map((o) => o.apply(term, (op, right) => [op, right] as const)),
-    ),
+      ].map((o) => o.apply(term, (op, right) => [op, right] as const))
+    )
   ),
   (left, list) =>
     list.reduce(
       (curr, [op, right]): Execution =>
         curr.apply(right, (x, y) => BigNumber.from(op(x)(y))),
-      left,
-    ) as Execution,
+      left
+    ) as Execution
 );
 
 function defer<T>(
-  p: () => Parser<ExpressionSource, T>,
+  p: () => Parser<ExpressionSource, T>
 ): Parser<ExpressionSource, T> {
   return new Parser((input) => {
     return p().parse(input);
@@ -184,13 +184,13 @@ export const EOF = new Parser<ExpressionSource, null>((input) => {
   throw new ParserError(
     `Did not reach parse to end, remaining "${input
       .map((x) => (x.type === 'expression' ? x.expression : '[value]'))
-      .join(' ')}"`,
+      .join(' ')}"`
   );
 });
 
 function extractExpressions(
   operators: TemplateStringsArray,
-  args: BigNumberSource[],
+  args: BigNumberSource[]
 ): { key: string; expressions: ExpressionSource[]; values: BigNumberSource[] } {
   const expressions: ExpressionSource[] = [];
   const values: BigNumberSource[] = [];
@@ -199,7 +199,7 @@ function extractExpressions(
     for (const char of chars) {
       if (!isNaN(char as any)) {
         throw new ParserError(
-          `You need to wrap all the numbers in \${}, found a ${char}`,
+          `You need to wrap all the numbers in \${}, found a ${char}`
         );
       }
       expressions.push({
@@ -212,14 +212,14 @@ function extractExpressions(
       if (
         typeof arg === 'string' &&
         ['+', '-', '*', '/', '>', '<', '===', '==', '<=', '>=', '<<'].includes(
-          arg.trim(),
+          arg.trim()
         )
       ) {
         expressions.push(
           ...arg.split('').map((a) => ({
             type: 'expression' as const,
             expression: a,
-          })),
+          }))
         );
       } else {
         expressions.push({
@@ -272,10 +272,10 @@ const comparator = expr
         .or(expression('!='))
         .map(
           () => (a: BigNumberSource) => (b: BigNumberSource) =>
-            !BigNumber.isEq(a)(b),
+            !BigNumber.isEq(a)(b)
         ),
     ]),
-    (a, b) => [a, b] as const,
+    (a, b) => [a, b] as const
   )
   .apply(expr, ([a, op], b) => a.apply(b, (x, y) => op(x)(y)));
 
@@ -285,14 +285,14 @@ const logicOperator = comparator.apply(
       [
         expression('&&').map(() => (a: boolean) => (b: boolean) => a && b),
         expression('||').map(() => (a: boolean) => (b: boolean) => a || b),
-      ].map((o) => o.apply(comparator, (op, right) => [op, right] as const)),
-    ),
+      ].map((o) => o.apply(comparator, (op, right) => [op, right] as const))
+    )
   ),
   (left, list) =>
     list.reduce(
       (curr, [op, right]) => curr.apply(right, (x, y) => op(x)(y)),
-      left,
-    ),
+      left
+    )
 );
 
 export function mathIs(

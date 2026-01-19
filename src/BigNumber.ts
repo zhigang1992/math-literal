@@ -97,13 +97,13 @@ export namespace BigNumber {
         precision?: number;
         roundingMode?: RoundingMode;
       },
-      value: BigNumberSource,
+      value: BigNumberSource
     ): string => {
       return toBig(value).toFixed(
         options.precision ?? 0,
-        options.roundingMode ?? roundFloor,
+        options.roundingMode ?? roundFloor
       );
-    },
+    }
   );
 
   export const toExponential = curry2(
@@ -112,13 +112,13 @@ export namespace BigNumber {
         precision?: number;
         roundingMode?: RoundingMode;
       },
-      value: BigNumberSource,
+      value: BigNumberSource
     ): string => {
       return toBig(value).toExponential(
         options.precision ?? 0,
-        options.roundingMode ?? roundFloor,
+        options.roundingMode ?? roundFloor
       );
-    },
+    }
   );
 
   export const isNegative = (value: BigNumberSource): boolean => {
@@ -136,31 +136,31 @@ export namespace BigNumber {
   export const isEq = curry2(
     (value: BigNumberSource, a: BigNumberSource): boolean => {
       return toBig(value).eq(toBig(a));
-    },
+    }
   );
 
   export const isGt = curry2(
     (value: BigNumberSource, a: BigNumberSource): boolean => {
       return toBig(value).gt(toBig(a));
-    },
+    }
   );
 
   export const isGte = curry2(
     (value: BigNumberSource, a: BigNumberSource): boolean => {
       return toBig(value).gte(toBig(a));
-    },
+    }
   );
 
   export const isLt = curry2(
     (value: BigNumberSource, a: BigNumberSource): boolean => {
       return toBig(value).lt(toBig(a));
-    },
+    }
   );
 
   export const isLte = curry2(
     (value: BigNumberSource, a: BigNumberSource): boolean => {
       return toBig(value).lte(toBig(a));
-    },
+    }
   );
 
   export const setPrecision = curry2(
@@ -169,17 +169,17 @@ export namespace BigNumber {
         precision?: number;
         roundingMode?: RoundingMode;
       },
-      value: BigNumberSource,
+      value: BigNumberSource
     ): BigNumber => {
       return fromBig(
         toBig(
           toBig(value).toPrecision(
             options.precision ?? 0,
-            options.roundingMode ?? roundFloor,
-          ),
-        ),
+            options.roundingMode ?? roundFloor
+          )
+        )
       );
-    },
+    }
   );
 
   export const getPrecision = (value: BigNumberSource): number => {
@@ -192,12 +192,12 @@ export namespace BigNumber {
 
   export const leftMoveDecimals = curry2(
     (distance: number, value: BigNumberSource): BigNumber =>
-      moveDecimals({ distance }, value),
+      moveDecimals({ distance }, value)
   );
 
   export const rightMoveDecimals = curry2(
     (distance: number, value: BigNumberSource): BigNumber =>
-      moveDecimals({ distance: -distance }, value),
+      moveDecimals({ distance: -distance }, value)
   );
 
   export const moveDecimals = curry2(
@@ -212,13 +212,13 @@ export namespace BigNumber {
 
       // distance === 0
       return from(value);
-    },
+    }
   );
 
   export const getDecimalPart = curry2(
     (
       options: { precision: number },
-      value: BigNumberSource,
+      value: BigNumberSource
     ): undefined | string => {
       /**
        * `toString` will return `"1e-8"` in some case, so we choose `toFixed` here
@@ -228,13 +228,13 @@ export namespace BigNumber {
           precision: Math.min(getPrecision(value), options.precision),
           roundingMode: roundDown,
         },
-        value,
+        value
       );
 
       const [, decimals] = formatted.split('.');
       if (decimals == null) return undefined;
       return decimals;
-    },
+    }
   );
 
   export const abs = (value: BigNumberSource): BigNumber => {
@@ -260,25 +260,25 @@ export namespace BigNumber {
   export const add = curry2(
     (value: BigNumberSource, a: BigNumberSource): BigNumber => {
       return fromBig(toBig(value).plus(toBig(a)));
-    },
+    }
   );
 
   export const minus = curry2(
     (value: BigNumberSource, a: BigNumberSource): BigNumber => {
       return fromBig(toBig(value).minus(toBig(a)));
-    },
+    }
   );
 
   export const mul = curry2(
     (value: BigNumberSource, a: BigNumberSource): BigNumber => {
       return fromBig(toBig(value).mul(toBig(a)));
-    },
+    }
   );
 
   export const div = curry2(
     (value: BigNumberSource, a: BigNumberSource): BigNumber => {
       return fromBig(toBig(value).div(toBig(a)));
-    },
+    }
   );
 
   export const pow = curry2((value: BigNumberSource, a: number): BigNumber => {
@@ -291,16 +291,16 @@ export namespace BigNumber {
         precision?: number;
         roundingMode?: RoundingMode;
       },
-      value: BigNumberSource,
+      value: BigNumberSource
     ): BigNumber => {
       const n = toBig(value);
       return fromBig(
         n.toSD(
           Math.max(1, (n.e ?? 0) + 1 + (options.precision ?? 0)),
-          options.roundingMode ?? roundFloor,
-        ),
+          options.roundingMode ?? roundFloor
+        )
       );
-    },
+    }
   );
 
   export const toPrecision = curry2(
@@ -309,23 +309,23 @@ export namespace BigNumber {
         precision?: number;
         roundingMode?: RoundingMode;
       },
-      value: BigNumberSource,
+      value: BigNumberSource
     ): string => {
       return toBig(value).toPrecision(
         options.precision ?? 0,
-        options.roundingMode ?? roundFloor,
+        options.roundingMode ?? roundFloor
       );
-    },
+    }
   );
 
   export const ascend = curry2(
     (a: BigNumberSource, b: BigNumberSource): -1 | 0 | 1 =>
-      isLt(a, b) ? -1 : isGt(a, b) ? 1 : 0,
+      isLt(a, b) ? -1 : isGt(a, b) ? 1 : 0
   );
 
   export const descend = curry2(
     (a: BigNumberSource, b: BigNumberSource): -1 | 0 | 1 =>
-      isLt(a, b) ? 1 : isGt(a, b) ? -1 : 0,
+      isLt(a, b) ? 1 : isGt(a, b) ? -1 : 0
   );
 
   export const max = (numbers: OneOrMore<BigNumberSource>): BigNumber => {
@@ -338,7 +338,7 @@ export namespace BigNumber {
 
   export const clamp = (
     range: [min: BigNumber, max: BigNumber],
-    n: BigNumber,
+    n: BigNumber
   ): BigNumber => {
     const [min, max] = range;
     if (isGte(n, max)) return max;

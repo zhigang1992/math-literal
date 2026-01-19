@@ -43,10 +43,7 @@ export class Parser<Source, T> {
 }
 
 export class ParserError extends Error {
-  constructor(
-    message: string,
-    readonly remaining?: ExpressionSource[],
-  ) {
+  constructor(message: string, readonly remaining?: ExpressionSource[]) {
     super(message);
   }
 }
