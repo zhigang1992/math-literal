@@ -61,6 +61,14 @@ export namespace BigNumber {
     return num instanceof Big;
   };
 
+  /**
+   * `false` for the `Infinity` / `NaN` results that `decimal.js` produces on
+   * overflow or on `x / 0`.
+   */
+  export const isFinite = (value: BigNumberSource): boolean => {
+    return toBig(value).isFinite();
+  };
+
   export const safeFrom = (value: BigNumberSource): undefined | BigNumber => {
     try {
       return from(value);
@@ -81,6 +89,14 @@ export namespace BigNumber {
     const res = toBig(value).toString();
     // Big.config(prevConf)
     return res;
+  };
+
+  /**
+   * Like {@link toString}, but never switches to exponential notation, so
+   * `1e-8` comes back as `"0.00000001"`. Lossless in both directions.
+   */
+  export const toPlainString = (value: BigNumberSource): string => {
+    return toBig(value).toFixed();
   };
 
   export const toNumber = (value: BigNumberSource): number => {

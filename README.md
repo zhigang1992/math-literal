@@ -68,6 +68,12 @@ const isEqual = mathIs`${5} === ${5}`;   // true
 const bigNum = BigNumber.from('123.456');
 const precise = math`${bigNum} * ${2}`;
 console.log(BigNumber.toString(precise)); // "246.912"
+
+// JSON in, BigNumber out
+import { BigJSON } from 'math-literal';
+
+const order = BigJSON.parse('{"id": 9223372036854775807, "price": 0.1}');
+BigJSON.stringify(order); // '{"id":9223372036854775807,"price":0.1}'
 ```
 
 ## Features
@@ -77,6 +83,7 @@ console.log(BigNumber.toString(precise)); // "246.912"
 - **Type Safety**: Full TypeScript support with proper type definitions
 - **Comprehensive Operations**: Support for arithmetic, comparison, and mathematical functions
 - **Clean API**: Intuitive syntax that reads like mathematical notation
+- **Lossless JSON**: `BigJSON.parse` turns every JSON number into a `BigNumber`, so precision never leaves the wire
 
 ## API Reference
 
@@ -171,6 +178,82 @@ const quotient = BigNumber.div(num, 2);
 const rounded = BigNumber.round({}, num);
 const fixed = BigNumber.toFixed({ precision: 2 }, num);
 ```
+
+## JSON
+
+`JSON.parse` reads every number into a double. That silently rewrites any
+integer past 2^53 and rounds most decimals:
+
+```javascript
+JSON.parse('{"id": 9223372036854775807}').id; // 9223372036854776000
+JSON.parse('{"total": 0.1}').total + 0.2;     // 0.30000000000000004
+```
+
+`BigJSON` parses the same text into `BigNumber` values instead. Every number
+becomes one — not just the integers a double would mangle — so a value is never
+half-precise depending on how large it happened to be:
+
+```typescript
+import { BigJSON, BigNumber, math } from 'math-literal';
+
+// `parse` returns a JSONValue; narrow it to the shape you expect.
+const order = BigJSON.parse(
+  '{"id": 9223372036854775807, "price": 0.1, "qty": 3}'
+) as { id: BigNumber; price: BigNumber; qty: BigNumber };
+
+BigNumber.toString(order.id);                            // "9223372036854775807"
+BigNumber.toString(math`${order.price} * ${order.qty}`); // "0.3"
+
+BigJSON.stringify(order);
+// '{"id":9223372036854775807,"price":0.1,"qty":3}'
+```
+
+`stringify` writes BigNumbers back as bare JSON numbers, not quoted strings, so
+a parse/stringify round trip returns the literals you started with.
+
+### `BigJSON.parse(text, options?)`
+
+Returns a `JSONValue`: `null`, `boolean`, `string`, `BigNumber`, an array, or a
+plain object. Objects come back with a normal prototype.
+
+| Option | Type | Default | Description |
+|--------|------|---------|-------------|
+| `strict` | `boolean` | `false` | Throw on a duplicate object key instead of keeping the last one |
+| `protoAction` | `'error' \| 'ignore' \| 'preserve'` | `'error'` | Handling for a `__proto__` key |
+| `constructorAction` | `'error' \| 'ignore' \| 'preserve'` | `'error'` | Handling for a `constructor` key |
+| `reviver` | `(key, value) => unknown` | — | Bottom-up transform, like the second argument to `JSON.parse` |
+
+Under `'preserve'` the key is defined as an ordinary own property rather than
+assigned, so `__proto__` cannot reach `Object.prototype`.
+
+Parse failures throw a `JSONParseError` (a `SyntaxError`) carrying `at` and
+`text`.
+
+### `BigJSON.stringify(value, options?)`
+
+| Option | Type | Description |
+|--------|------|-------------|
+| `replacer` | `(key, value) => unknown` \| `string[]` | Mapping function, or a whitelist of object keys |
+| `space` | `number \| string` | Indent width (capped at 10) or literal indent string |
+
+Returns `undefined` for a top-level `undefined`, function or symbol, exactly as
+`JSON.stringify` does. Native `bigint` values are written as JSON numbers
+rather than throwing.
+
+### Differences from `JSON` and from `json-bigint`
+
+- **Every** number becomes a `BigNumber`. `json-bigint` promotes only integers
+  it judges unsafe, so `1` and `1e400` come back as different types.
+- The number grammar is RFC 8259 exactly — no leading zeros, no bare `1.`, no
+  empty exponent — and strings reject unescaped control characters. On a fuzz
+  of 200k inputs it accepts and rejects precisely what `JSON.parse` does, with
+  one deliberate exception: a magnitude `JSON.parse` would flatten to
+  `Infinity` (`1e999999999999999999`) throws rather than parsing to a wrong
+  value.
+- Parser state lives on the call, so a reviver may re-enter `parse`.
+- A reviver is not walked into a `BigNumber`'s internal fields.
+- Numbers stringify in plain notation up to 100 digits and switch to
+  exponential beyond that. Both forms are valid JSON and both are lossless.
 
 ## Advanced Examples
 
