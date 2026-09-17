@@ -1,32 +1,68 @@
 name: CI
-on: [push]
-jobs:
-  build:
-    name: Build, lint, and test on Node ${{ matrix.node }} and ${{ matrix.os }}
 
+on:
+  push:
+    branches: [main]
+  pull_request:
+
+jobs:
+  check:
+    name: Lint and typecheck
+    runs-on: ubuntu-latest
+    steps:
+      - uses: actions/checkout@v5
+      - uses: oven-sh/setup-bun@v2
+      - run: bun install --frozen-lockfile
+      - run: bun run lint
+      - run: bun run typecheck
+
+  test:
+    name: Test on ${{ matrix.os }}
     runs-on: ${{ matrix.os }}
     strategy:
+      fail-fast: false
+      matrix:
+        os: [ubuntu-latest, windows-latest, macOS-latest]
+    steps:
+      - uses: actions/checkout@v5
+      - uses: oven-sh/setup-bun@v2
+      - run: bun install --frozen-lockfile
+      - run: bun test
+      - run: bun run build
+
+  consume:
+    # The build runs on bun, but the package is installed by Node users. This
+    # checks the published entry points actually load there.
+    name: Load the build on Node ${{ matrix.node }}
+    needs: test
+    runs-on: ubuntu-latest
+    strategy:
+      fail-fast: false
       matrix:
         node: ['22.x', '24.x']
-        os: [ubuntu-latest, windows-latest, macOS-latest]
-
     steps:
-      - name: Checkout repo
-        uses: actions/checkout@v4
-
-      - name: Use Node ${{ matrix.node }}
-        uses: actions/setup-node@v4
+      - uses: actions/checkout@v5
+      - uses: oven-sh/setup-bun@v2
+      - uses: actions/setup-node@v5
         with:
           node-version: ${{ matrix.node }}
-
-      - name: Install deps and build (with cache)
-        uses: bahmutov/npm-install@v1
-
-      - name: Lint
-        run: yarn lint
-
-      - name: Test
-        run: yarn test --ci --coverage --maxWorkers=2
-
-      - name: Build
-        run: yarn build
+      - run: bun install --frozen-lockfile
+      - run: bun run build
+      - name: Require the CommonJS build
+        run: |
+          node -e "
+            const { BigJSON, BigNumber } = require('./dist/index.js');
+            const v = BigJSON.parse('{\"id\":9223372036854775807}');
+            const out = BigJSON.stringify(v);
+            if (out !== '{\"id\":9223372036854775807}') throw new Error(out);
+            if (BigNumber.toString(BigNumber.add(1, 2)) !== '3') throw new Error('add');
+            console.log('cjs ok');
+          "
+      - name: Import the ES module build
+        run: |
+          node --input-type=module -e "
+            import { BigJSON } from './dist/math-literal.esm.js';
+            const out = BigJSON.stringify(BigJSON.parse('{\"a\":0.1}'));
+            if (out !== '{\"a\":0.1}') throw new Error(out);
+            console.log('esm ok');
+          "

@@ -1,12 +1,14 @@
 name: size
+
 on: [pull_request]
+
 jobs:
   size:
+    name: Size limit
     runs-on: ubuntu-latest
-    env:
-      CI_JOB_NUMBER: 1
     steps:
-      - uses: actions/checkout@v4
-      - uses: andresz1/size-limit-action@v1
-        with:
-          github_token: ${{ secrets.GITHUB_TOKEN }}
+      - uses: actions/checkout@v5
+      - uses: oven-sh/setup-bun@v2
+      - run: bun install --frozen-lockfile
+      - run: bun run build
+      - run: bun run size
