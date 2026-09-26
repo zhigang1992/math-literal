@@ -177,7 +177,16 @@ const quotient = BigNumber.div(num, 2);
 // Rounding operations
 const rounded = BigNumber.round({}, num);
 const fixed = BigNumber.toFixed({ precision: 2 }, num);
+
+// Inspecting shape
+BigNumber.getPrecision('12.345');                       // 3  (decimal places)
+BigNumber.getIntegerLength('12.345');                   // 2  (digits before the point)
+BigNumber.getDecimalPart({ precision: 2 }, '12.345');   // "34"
 ```
+
+`getPrecision` counts **decimal places**, not significant digits: `0.001` is
+`3`, not `1`. `getDecimalPart` truncates rather than rounds, and never pads, so
+asking for more precision than the value carries just gives you what is there.
 
 ## JSON
 
@@ -310,6 +319,28 @@ function validateTransaction(amount: number, balance: number, limit: number) {
   }
 }
 ```
+
+## When an expression is wrong
+
+`math` and `mathIs` parse the template the first time a given call site runs,
+then cache it. A malformed expression throws with the token stream the parser
+saw and a caret on the token that broke it:
+
+```
+Could not parse this math expression:
+
+  m a x ( ${0} ${1} )
+               ^
+
+Expected "," but found a value
+```
+
+Whitespace is dropped while tokenising, so the rendered form shows what the
+parser worked with rather than what you typed. That is usually the more useful
+of the two: `${a} ++ ${b}` renders as `${0} + + ${1}`, which makes it obvious
+that `++` became two separate operators.
+
+Interpolated values appear as `${0}`, `${1}` and so on, numbered in order.
 
 ## Order of Operations
 

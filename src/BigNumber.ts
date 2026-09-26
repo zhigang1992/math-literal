@@ -198,8 +198,14 @@ export namespace BigNumber {
     }
   );
 
+  /**
+   * How many digits sit after the decimal point: `2` for `1.25`, `0` for `100`.
+   *
+   * Note this counts decimal places, not significant digits, which is what
+   * {@link getDecimalPart} needs to avoid padding its result with zeros.
+   */
   export const getPrecision = (value: BigNumberSource): number => {
-    return toBig(value).d?.length ?? 0 - ((toBig(value).e ?? -1) + 1);
+    return toBig(value).decimalPlaces();
   };
 
   export const getIntegerLength = (value: BigNumberSource): number => {

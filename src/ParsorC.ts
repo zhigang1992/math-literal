@@ -33,14 +33,32 @@ export class Parser<Source, T> {
       try {
         return this.parse(i);
       } catch (e) {
-        if (e instanceof ParserError) {
+        if (!(e instanceof ParserError)) throw e;
+        try {
           return other.parse(i);
+        } catch (otherError) {
+          if (!(otherError instanceof ParserError)) throw otherError;
+          throw furthestFailure(e, otherError);
         }
-        throw e;
       }
     });
   }
 }
+
+/**
+ * When every branch of an `or` chain fails, the last one tried is rarely the
+ * interesting one. Report whichever got deepest into the input instead, so a
+ * typo inside `max(…)` blames the argument rather than the `max` that never
+ * matched.
+ */
+const furthestFailure = (a: ParserError, b: ParserError): ParserError => {
+  // No `remaining` means the branch failed without saying where, which tells us
+  // less than a branch that did.
+  if (a.remaining == null) return b.remaining == null ? a : b;
+  if (b.remaining == null) return a;
+  // Fewer tokens left over means more input consumed.
+  return b.remaining.length < a.remaining.length ? b : a;
+};
 
 export class ParserError extends Error {
   constructor(message: string, readonly remaining?: ExpressionSource[]) {

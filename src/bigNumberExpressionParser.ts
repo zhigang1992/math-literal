@@ -16,14 +16,14 @@ const expression = <Op extends string>(
   new Parser<ExpressionSource, Op>((i) => {
     const expressions = i.slice(0, input.length).map((a) => {
       if (a.type !== 'expression') {
-        throw new ParserError(`not expression ${input}`);
+        throw new ParserError(`Expected "${input}" but found a value`, i);
       }
       return a.expression;
     });
     if (expressions.join('') === input) {
       return [input, i.slice(input.length)];
     }
-    throw new ParserError(`not matching ${input}`, i);
+    throw new ParserError(`Expected "${input}"`, i);
   });
 
 function fails<T>(): Parser<ExpressionSource, T> {
@@ -181,12 +181,77 @@ export const EOF = new Parser<ExpressionSource, null>((input) => {
   if (input.length === 0) {
     return [null, []];
   }
+  const next = input[0];
+  const describe =
+    next == null
+      ? 'end of expression'
+      : next.type === 'expression'
+      ? `"${next.expression}"`
+      : 'a value';
   throw new ParserError(
-    `Did not reach parse to end, remaining "${input
-      .map((x) => (x.type === 'expression' ? x.expression : '[value]'))
-      .join(' ')}"`
+    `Unexpected ${describe} after an otherwise complete expression`,
+    input
   );
 });
+
+/**
+ * Renders the token stream back into something readable. Whitespace from the
+ * original template is dropped during tokenising, so this shows what the parser
+ * actually saw rather than what was typed, which is usually the more useful of
+ * the two: `${0} + + ${1}` makes it obvious that `++` became two operators.
+ */
+const renderExpressions = (expressions: ExpressionSource[]): string => {
+  let valueIndex = 0;
+  return expressions
+    .map((token) =>
+      token.type === 'expression'
+        ? token.expression
+        : `\${${String(valueIndex++)}}`
+    )
+    .join(' ');
+};
+
+/**
+ * Turns a bare combinator failure into a message that points at the offending
+ * token, so a typo in a template does not surface as `not matching )`.
+ */
+const describeFailure = (
+  expressions: ExpressionSource[],
+  error: ParserError
+): ParserError => {
+  const lines = [
+    'Could not parse this math expression:',
+    '',
+    `  ${renderExpressions(expressions)}`,
+  ];
+
+  const { remaining } = error;
+  if (remaining != null) {
+    const consumed = expressions.length - remaining.length;
+    if (consumed >= 0 && consumed <= expressions.length) {
+      const prefix = renderExpressions(expressions.slice(0, consumed));
+      const column = consumed === 0 ? 0 : prefix.length + 1;
+      lines.push(`  ${' '.repeat(column)}^`);
+    }
+  }
+
+  lines.push('', error.message);
+  return new ParserError(lines.join('\n'), remaining);
+};
+
+const parseTemplate = <T>(
+  parser: Parser<ExpressionSource, Parser<BigNumberSource, T>>,
+  expressions: ExpressionSource[]
+): Parser<BigNumberSource, T> => {
+  try {
+    return parser.apply(EOF, (a) => a).parse(expressions)[0];
+  } catch (error) {
+    if (error instanceof ParserError) {
+      throw describeFailure(expressions, error);
+    }
+    throw error;
+  }
+};
 
 function extractExpressions(
   operators: TemplateStringsArray,
@@ -252,7 +317,7 @@ export function math(
   if (cached != null) {
     return cached.parse(values)[0];
   }
-  const [execution] = expr.apply(EOF, (a) => a).parse(expressions);
+  const execution = parseTemplate(expr, expressions);
   math.executionCache[key] = execution;
   return execution.parse(values)[0];
 }
@@ -304,7 +369,7 @@ export function mathIs(
   if (cached != null) {
     return cached.parse(values)[0];
   }
-  const [execution] = logicOperator.apply(EOF, (a) => a).parse(expressions);
+  const execution = parseTemplate(logicOperator, expressions);
   mathIs.executionCache[key] = execution;
   return execution.parse(values)[0];
 }
